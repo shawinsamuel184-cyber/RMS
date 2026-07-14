@@ -67,14 +67,13 @@ export function createLocalImage(
   };
 }
 
-/** Tries every extension + name variant, then Unsplash fallback, then placeholder SVG. */
+/** Tries every extension + name variant for local images only — no external fallbacks */
 export function handleImageError(
   e: SyntheticEvent<HTMLImageElement>,
-  image?: LocalImageRef | { fallback?: string; folder?: string; basename?: string; basenameVariants?: string[] }
+  image?: LocalImageRef | { folder?: string; basename?: string; basenameVariants?: string[] }
 ) {
   const el = e.currentTarget;
   const folder = image?.folder ?? el.dataset.imgFolder;
-  const fallback = image && "fallback" in image ? image.fallback : undefined;
 
   const variants =
     (image && "basenameVariants" in image && image.basenameVariants) ||
@@ -103,14 +102,6 @@ export function handleImageError(
       return;
     }
   }
-
-  if (fallback && el.dataset.fallbackUsed !== "1") {
-    el.dataset.fallbackUsed = "1";
-    el.src = fallback;
-    return;
-  }
-
-  if (el.src !== FALLBACK_IMG) el.src = FALLBACK_IMG;
 }
 
 export function localImageAttrs(image: LocalImageRef) {
@@ -155,50 +146,39 @@ export type SizedImage = LocalImageRef & {
   size: "tall" | "wide" | "square";
 };
 
+const JPG_EXT_INDEX = IMAGE_EXTENSIONS.indexOf("jpg");
+const PNG_EXT_INDEX = IMAGE_EXTENSIONS.indexOf("png");
 const WEBP_EXT_INDEX = IMAGE_EXTENSIONS.indexOf("webp");
 
 export const portfolioCuts: SizedImage[] = Array.from({ length: CUT_COUNT }, (_, i) => {
   const n = i + 1;
   const variants = cutBasenames(n);
+  // cuts 1-11 are webp, 12-18 are jpg
+  const extIndex = n <= 11 ? WEBP_EXT_INDEX : JPG_EXT_INDEX;
   return {
     id: `cut-${n}`,
-    ...createLocalImage("cuts", variants[0], u(CUT_FALLBACK_IDS[i], 500), variants, WEBP_EXT_INDEX),
+    ...createLocalImage("cuts", variants[0], "", variants, extIndex),
     number: String(n).padStart(2, "0"),
     size: i % 3 === 0 ? "tall" : i % 4 === 1 ? "wide" : "square",
   };
 });
 
 /** Hero — add owner + background to public/images/hero/ */
-const HERO_BG_FALLBACK =
-  "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1600&q=80";
-const HERO_OWNER_FALLBACK = u("photo-1599351431202-1e0f0137899a", 1000);
-
 export const heroImages = {
-  background: createLocalImage("hero", "background", HERO_BG_FALLBACK),
-  owner: createLocalImage("hero", "owner", HERO_OWNER_FALLBACK, ["owner", "portrait"]),
+  background: createLocalImage("hero", "background", "", [], WEBP_EXT_INDEX),
+  owner: createLocalImage("hero", "owner", "", ["owner", "portrait"], JPG_EXT_INDEX),
 };
 
 /** Site logo — public/images/logo/logo.png */
-const PNG_EXT = IMAGE_EXTENSIONS.indexOf("png");
-
 export const logoImage = createLocalImage(
   "logo",
   "logo",
   "",
   ["logo"],
-  PNG_EXT
+  PNG_EXT_INDEX
 );
 
 /** My work collage — work-1 … work-6 (stock barber photos until you add your own) */
-const WORK_FALLBACK_IDS = [
-  "photo-1621605815971-fbc98d665033",
-  "photo-1622296089863-eb7fc530daa8",
-  "photo-1521590832167-7bcbfaa6381f",
-  "photo-1503951458645-643d53bfd90f",
-  "photo-1517832606299-7ae9b720a186",
-  "photo-1622287162716-f311baa1a2b8",
-];
-
 const WORK_IMAGE_NAMES = [
   "work-tools",
   "work-fade",
@@ -208,8 +188,11 @@ const WORK_IMAGE_NAMES = [
   "work-studio",
 ] as const;
 
-export const workCollage = WORK_FALLBACK_IDS.map((id, i) => ({
-  ...createLocalImage("work", WORK_IMAGE_NAMES[i], u(id, 700), [WORK_IMAGE_NAMES[i], `work-${i + 1}`]),
+const WORK_EXTENSIONS = [
+  WEBP_EXT_INDEX, WEBP_EXT_INDEX, PNG_EXT_INDEX, WEBP_EXT_INDEX, WEBP_EXT_INDEX, WEBP_EXT_INDEX];
+
+export const workCollage = WORK_IMAGE_NAMES.map((name, i) => ({
+  ...createLocalImage("work", name, "", [name, `work-${i + 1}`], WORK_EXTENSIONS[i]),
   position: [
       "left-[2%] top-[2%] w-32 h-44 md:w-40 md:h-52",
       "right-[10%] top-[0%] w-32 h-36 md:w-44 md:h-48",
@@ -221,30 +204,13 @@ export const workCollage = WORK_FALLBACK_IDS.map((id, i) => ({
 }));
 
 /** About me timeline — story-1 … story-5 */
-const ABOUT_FALLBACK_IDS = [
-  "photo-1599351431202-1e0f0137899a",
-  "photo-1503951458645-643d53bfd90f",
-  "photo-1493256338651-d82f7acb2b38",
-  "photo-1521590832167-7bcbfaa6381f",
-  "photo-1622286342621-4bd786c2447c",
-];
+const ABOUT_EXTENSIONS = [WEBP_EXT_INDEX, JPG_EXT_INDEX, JPG_EXT_INDEX, JPG_EXT_INDEX, JPG_EXT_INDEX];
 
-const PNG_EXT_INDEX = IMAGE_EXTENSIONS.indexOf("jpg");
-
-export const aboutImages = ABOUT_FALLBACK_IDS.map((id, i) =>
-  createLocalImage("about", `story-${i + 1}`, u(id, 900), [`story-${i + 1}`], PNG_EXT_INDEX)
+export const aboutImages = ABOUT_EXTENSIONS.map((extIndex, i) =>
+  createLocalImage("about", `story-${i + 1}`, "", [`story-${i + 1}`], extIndex)
 );
 
 /** Services — descriptive file names matching each service */
-const SERVICE_FALLBACK_IDS = [
-  "photo-1622286342621-4bd786c2447c",
-  "photo-1521490878406-ddef089da09a",
-  "photo-1519501025264-65ba15a82390",
-  "photo-1521590832167-7bcbfaa6381f",
-  "photo-1621605815971-fbc98d665033",
-  "photo-1622296089863-eb7fc530daa8",
-];
-
 const SERVICE_IMAGE_NAMES = [
   "signature-cut",
   "cut-beard",
@@ -254,6 +220,6 @@ const SERVICE_IMAGE_NAMES = [
   "luxury-package",
 ] as const;
 
-export const serviceImages = SERVICE_FALLBACK_IDS.map((id, i) =>
-  createLocalImage("services", SERVICE_IMAGE_NAMES[i], u(id, 900))
+export const serviceImages = SERVICE_IMAGE_NAMES.map((name) =>
+  createLocalImage("services", name, "", [], JPG_EXT_INDEX)
 );
