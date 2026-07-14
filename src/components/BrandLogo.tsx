@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { logoImage } from "../config/images";
 import { siteConfig } from "../config/siteConfig";
+import { SiteImage } from "./SiteImage";
 
 type BrandLogoProps = {
   className?: string;
@@ -9,29 +10,24 @@ type BrandLogoProps = {
 };
 
 export function BrandLogo({ className = "", textClassName = "", imgClassName = "h-12 w-auto max-w-[200px] object-contain" }: BrandLogoProps) {
-  const [src, setSrc] = useState<string | null>(null);
+  const [useImage, setUseImage] = useState(false);
 
   useEffect(() => {
-    const exts = ["png", "jpg", "jpeg", "webp"];
-    const base = import.meta.env.BASE_URL;
-    (async () => {
-      for (const ext of exts) {
-        const url = `${base}images/logo/logo.${ext}`;
-        try {
-          const res = await fetch(url, { method: "HEAD" });
-          if (res.ok) {
-            setSrc(url);
-            return;
-          }
-        } catch {
-          /* try next */
-        }
-      }
-    })();
+    // Check if logo exists by trying to load the primary src
+    const img = new Image();
+    img.onload = () => setUseImage(true);
+    img.onerror = () => setUseImage(false);
+    img.src = logoImage.src;
   }, []);
 
-  if (src) {
-    return <img src={src} alt={siteConfig.name} className={`${imgClassName} ${className}`} />;
+  if (useImage) {
+    return (
+      <SiteImage
+        image={logoImage}
+        alt={siteConfig.name}
+        className={`${imgClassName} ${className}`}
+      />
+    );
   }
 
   return (

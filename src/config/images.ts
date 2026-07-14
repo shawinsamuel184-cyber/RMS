@@ -155,12 +155,14 @@ export type SizedImage = LocalImageRef & {
   size: "tall" | "wide" | "square";
 };
 
+const WEBP_EXT_INDEX = IMAGE_EXTENSIONS.indexOf("webp");
+
 export const portfolioCuts: SizedImage[] = Array.from({ length: CUT_COUNT }, (_, i) => {
   const n = i + 1;
   const variants = cutBasenames(n);
   return {
     id: `cut-${n}`,
-    ...createLocalImage("cuts", variants[0], u(CUT_FALLBACK_IDS[i], 500), variants),
+    ...createLocalImage("cuts", variants[0], u(CUT_FALLBACK_IDS[i], 500), variants, WEBP_EXT_INDEX),
     number: String(n).padStart(2, "0"),
     size: i % 3 === 0 ? "tall" : i % 4 === 1 ? "wide" : "square",
   };

@@ -189,12 +189,9 @@ function Marquee({ items, direction = "left", speed = 22 }: { items: typeof port
               className={`group relative flex-shrink-0 overflow-hidden rounded-3xl border border-white/5 ${h} w-40 sm:w-44`}
               style={{ background: CARD }}
             >
-              <img
-                src={it.src}
+              <SiteImage
+                image={it}
                 alt={`Cut ${it.number}`}
-                data-img-folder={it.folder}
-                data-img-base={it.basename}
-                onError={(e) => handleImageError(e, it)}
                 className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
                 loading="lazy"
               />
